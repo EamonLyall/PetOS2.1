@@ -1,0 +1,65 @@
+# =============================================================
+# PetOS 2.1 — Git 忽略规则
+# 只提交源代码与文档；构建产物、本地数据库、密钥、依赖均不入库。
+# =============================================================
+
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# 虚拟环境
+.venv/
+venv/
+env/
+ENV/
+
+# ---------- 前端 / Node 构建产物 ----------
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# ---------- 后端遗留 Java 工程构建产物 ----------
+backend/target/
+
+# ---------- 本地环境变量（保留 *.example / *.development / *.production） ----------
+.env
+.env.local
+.env.*.local
+
+# ---------- 本地 SQLite 数据库 ----------
+# 首次启动后端会自动建表并灌入种子数据；如需与队友同步一致数据，
+# 请使用 backend/sql/ 下的 SQL 快照 + backend/scripts/db_tool.py import。
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+
+# ---------- 运行时抓拍上传（保留已提交的样图 sample_*.jpg） ----------
+backend/upload-images/alarm_*.jpg
+backend/upload-images/alarm_*.png
+backend/upload-images/snap_*.jpg
+backend/upload-images/snap_*.png
+
+# ---------- 日志 ----------
+*.log
+logs/
+
+# ---------- IDE / 操作系统 ----------
+.idea/
+.vscode/
+*.swp
+*.swo
+.vs/
+.DS_Store
+Thumbs.db
+desktop.ini

@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  pom.xml：Maven 工程的“总配置清单”。
+  它告诉 Maven：这个项目叫什么、用哪个版本的 SpringBoot、需要哪些第三方依赖（jar 包）、怎么打包。
+  答辩讲解：SpringBoot 用“父工程 parent”统一管理几乎所有依赖的版本号，我们就不用自己一个个写版本，避免版本冲突。
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <!-- 模型版本：固定写 4.0.0，代表当前 Maven pom 文件的规范版本，照抄即可 -->
+    <modelVersion>4.0.0</modelVersion>
+
+    <!--
+      父工程：spring-boot-starter-parent，版本 3.4.5（属于要求的 SpringBoot 3.4.x）。
+      它已经帮我们把常用 jar 包的兼容版本、Java 编译参数、打包插件都配好了。
+    -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.4.5</version>
+        <relativePath/> <!-- 留空表示从本地仓库/远程仓库去拉取父工程，而不是去找上一级目录 -->
+    </parent>
+
+    <!-- 下面三行是本工程的“身份证”：groupId 一般用公司/项目的包名倒写，artifactId 是工程名，version 是版本 -->
+    <groupId>com.petos</groupId>
+    <artifactId>petos-monitor-backend</artifactId>
+    <version>1.0.0</version>
+    <name>petos-monitor-backend</name>
+    <description>ESP32-S3 + 香橙派 YOLO 人形监控系统后端（路演最小可跑版本）</description>
+
+    <!-- properties 用来集中定义“变量”，后面需要改 Java 版本或依赖版本时，只改这里一处 -->
+    <properties>
+        <!-- 强制用 JDK 17 编译，SpringBoot 3.x 最低要求 17 -->
+        <java.version>17</java.version>
+        <!-- Eclipse Paho 是 Java 端连接 MQTT 的客户端，SpringBoot 没默认管理它，所以单独写版本 -->
+        <paho.version>1.2.5</paho.version>
+    </properties>
+
+    <!-- dependencies：本工程真正需要的所有 jar 包都写在这里 -->
+    <dependencies>
+
+        <!--
+          Web 启动器：一引入就自带内嵌 Tomcat、SpringMVC。
+          作用：让我们能写 Controller、对外提供 HTTP 接口，启动后直接监听 8080 端口。
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!--
+          JPA 启动器：Spring Data JPA，用来操作数据库。
+          作用：我们只要写一个接口继承 JpaRepository，不用写 SQL 就能完成增删改查。
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <!--
+          参数校验启动器：配合 @Valid、@NotNull 等注解。
+          作用：图片上传、接口入参时自动校验格式，不合法直接进全局异常处理器。
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
+        <!--
+          H2 内嵌数据库：纯 Java 的小数据库，路演免安装，随项目一起启动。
+          scope=runtime 表示编译期不需要，只有运行时才用。
+        -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!--
+          MySQL 驱动：默认不启用，仅在 application.yml 切换数据源时才会用到。
+          先把依赖放这里，将来换 MySQL 不用改 pom，只改配置即可（切换注释见 application.yml）。
+        -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!--
+          Eclipse Paho MQTT 客户端：后端用它连接 EMQX，订阅主题、发布控制指令。
+          后端不是浏览器，所以走 TCP 1883 端口连接。
+        -->
+        <dependency>
+            <groupId>org.eclipse.paho</groupId>
+            <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
+            <version>${paho.version}</version>
+        </dependency>
+
+        <!--
+          测试启动器：写单元测试用，路演最小版本可先不写测试类，保留依赖方便后续扩展。
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
+    <!-- build：打包相关配置 -->
+    <build>
+        <plugins>
+            <!--
+              SpringBoot 打包插件：执行 mvn package 时会打成一个“可直接运行的 fat jar”，
+              里面包含了所有依赖和内嵌 Tomcat，香橙派上用 java -jar 即可启动。
+            -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
