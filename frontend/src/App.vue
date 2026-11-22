@@ -12,7 +12,7 @@
     </div>
   </div>
 
-  <!-- 遮罩：抽屉 / 移动端导航打开时显示，点击关闭 -->
+  <!-- 遮罩：抽屉 / 侧边导航打开时显示，点击关闭 -->
   <div
     class="overlay"
     :class="{ 'is-open': store.ui.drawer || store.ui.menu }"
@@ -53,9 +53,15 @@ function onKeydown(e) {
 }
 
 // 应用启动：从后端数据库拉取全量快照填充全局状态（替代原本地 mock）
+let alertSyncTimer = null
 onMounted(() => {
   store.bootstrap()
+  // 轻量轮询让家长端无需手动刷新即可收到新预警角标（移动端 H5 工程同样如此）
+  alertSyncTimer = window.setInterval(() => store.refreshAlerts().catch(() => {}), 20000)
   document.addEventListener('keydown', onKeydown)
 })
-onUnmounted(() => document.removeEventListener('keydown', onKeydown))
+onUnmounted(() => {
+  window.clearInterval(alertSyncTimer)
+  document.removeEventListener('keydown', onKeydown)
+})
 </script>

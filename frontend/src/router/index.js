@@ -6,6 +6,7 @@ const routes = [
   { path: '/home', name: 'home', component: () => import('@/views/ViewHome.vue') },
   { path: '/pet', name: 'pet', component: () => import('@/views/ViewPet.vue') },
   { path: '/chat', name: 'chat', component: () => import('@/views/ViewChat.vue') },
+  { path: '/alerts', name: 'alerts', component: () => import('@/views/ViewAlerts.vue') },
   { path: '/device', name: 'device', component: () => import('@/views/ViewDevice.vue') },
   { path: '/memory', name: 'memory', component: () => import('@/views/ViewMemory.vue') },
   { path: '/plugin', name: 'plugin', component: () => import('@/views/ViewPlugin.vue') },

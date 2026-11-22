@@ -5,7 +5,7 @@
 - **默认数据库**：SQLite 内嵌库，文件位于 `backend/petos.db`，Python 标准库 `sqlite3` 驱动，免安装；
 - **建表时机**：后端启动时 `app/database.py::init_db()` 自动建表；表为空时灌入种子数据，重复启动不会重复插入；
 - **轻量迁移**：`_run_migrations()` 会为旧库自动补 `pet.energy / mood_tag / health_status` 字段和新增设置分组，不清空已有数据；
-- **MySQL 切换**：表名、字段名与 `sql/petos_companion_mysql.sql` 完全一致，导入该脚本后修改 `.env` 的 `DATABASE_URL` 即可；
+- **MySQL 切换**：按下方「六、切换 MySQL」的表结构自行建库后，修改 `.env` 的 `DATABASE_URL` 即可；
 - **种子来源**：`app/seed.py` 是业务数据唯一来源；前端已改为从后端数据库读取，不再保留本地 mock。
 
 > 重置演示数据：`python scripts/db_tool.py reset --yes`（或停掉后端删除 `backend/petos.db` 后重启）。
@@ -243,12 +243,7 @@ python scripts/db_tool.py stats               # 查看各表行数
 
 ## 六、切换 MySQL
 
-1. 启动 MySQL，执行脚本：
-
-   ```bash
-   mysql -u root -p < backend/sql/petos_companion_mysql.sql
-   ```
-
+1. 按第 2～4 节的表结构在 MySQL 中建库建表；
 2. 修改 `backend/.env`：
 
    ```ini

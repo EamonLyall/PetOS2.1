@@ -371,7 +371,7 @@
 {
   "id": 1, "deviceSn": "esp32-s3-001", "cameraSn": "orangepi-cam-001",
   "alarmType": "PERSON_DETECT", "confidence": 0.93,
-  "imagePath": "./upload-images/sample_1.jpg", "imageUrl": "/images/sample_1.jpg",
+  "imagePath": "", "imageUrl": "",
   "handled": false, "description": "检测到人体，已自动抓拍并联动声光报警",
   "alarmTime": "2026-11-20 08:50:00", "createTime": "2026-11-20 08:50:00"
 }

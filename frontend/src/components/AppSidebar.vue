@@ -19,6 +19,7 @@
       >
         <AppIcon :name="n.icon" />
         <span>{{ n.name }}</span>
+        <i v-if="n.key === 'alerts' && store.openAlertCount" class="nav__badge">{{ store.openAlertCount }}</i>
       </router-link>
     </nav>
 

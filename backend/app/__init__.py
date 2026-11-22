@@ -3,7 +3,7 @@
 # 模块分层：
 #   config     配置读取（.env / 环境变量）
 #   database   数据库连接、建表、种子初始化
-#   seed       与前端 src/data/seed.js 一一对应的演示数据
+#   seed       系统初始种子数据（首次启动写入数据库）
 #   common     统一响应壳、异常等公共组件
 #   services   外部服务封装：大模型代理、MQTT 预留客户端
 #   routers    接口层：companion（宠物陪伴域）、monitor（硬件监控域）

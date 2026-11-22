@@ -1,13 +1,12 @@
 # ============================================================
-# 种子数据模块：与前端 `frontend/src/data/seed.js` 及各页面写死的演示数据
-# 保持一一对应。后端首次启动（数据库为空）时把这些数据写入 SQLite，
-# 保证“后端返回的数据 == 前端原先的 mock 数据”，联调时页面表现不变。
+# 种子数据模块：后端首次启动（数据库为空）时写入 SQLite，
+# 作为系统初始业务数据，之后所有读写都以数据库为准。
 #
 # 注意：这里的字段名同时也是接口返回给前端的 JSON 字段名，
 #       与前端 store / 模板里读取的字段严格对齐（如 petKey、growth 等）。
 # ============================================================
 
-# ---------- 1. 已绑定设备（对应 seed.js 的 SEED.devices） ----------
+# ---------- 1. 已绑定设备 ----------
 # is_nearby=0 表示已配对入库；附近未配对设备见 NEARBY_DEVICES
 DEVICES = [
     {
@@ -27,7 +26,7 @@ DEVICES = [
     },
 ]
 
-# ---------- 2. 附近可配对设备（对应 seed.js 的 SEED.nearby） ----------
+# ---------- 2. 附近可配对设备 ----------
 NEARBY_DEVICES = [
     {"id": "d-xiaobai", "name": "PetOS 小白", "pet_key": "xiaobai", "place": "阳台",
      "signal": 88, "is_nearby": 1, "sort": 1},
@@ -35,7 +34,7 @@ NEARBY_DEVICES = [
      "signal": 64, "is_nearby": 1, "sort": 2},
 ]
 
-# ---------- 3. 宠物档案（对应 seed.js 的 SEED.pets） ----------
+# ---------- 3. 宠物档案 ----------
 # 后四个字段（heart_rate 等）来自“我的宠物”页面健康档案的演示值，一并落库。
 PETS = [
     {
@@ -86,10 +85,10 @@ PETS = [
     },
 ]
 
-# ---------- 4. 天气（对应 seed.js 的 SEED.weather） ----------
+# ---------- 4. 天气 ----------
 WEATHER = {"text": "晴", "temp": 26, "wind": "微风"}
 
-# ---------- 5. 陪伴趋势图（对应 seed.js 的 CHART） ----------
+# ---------- 5. 陪伴趋势图 ----------
 # 每条记录：区间(week/month/quarter)、标签、互动次数、在线时长、排序
 CHART = {
     "week": {
@@ -109,21 +108,21 @@ CHART = {
     },
 }
 
-# ---------- 6. 聊天初始记录（对应 companion.js 里的 chatMessages） ----------
+# ---------- 6. 聊天初始记录 ----------
 CHAT_MESSAGES = [
     {"who": "pet", "text": "主人你回来啦～今天想和我玩什么呀？😺"},
     {"who": "me", "text": "今天天气怎么样？"},
     {"who": "pet", "text": "今天是晴天，26°C，微风～很适合带我去晒太阳哦 ☀️"},
 ]
 
-# ---------- 7. 今日小确幸（对应 companion.js 里的 blessList） ----------
+# ---------- 7. 今日小确幸 ----------
 BLESS_LIST = [
     {"text": "和小猫玩一会小游戏", "done": True},
     {"text": "给小猫摸头", "done": False},
     {"text": "一起看窗外的云", "done": False},
 ]
 
-# ---------- 8. 插件清单（对应 ViewPlugin.vue 里的 plugins） ----------
+# ---------- 8. 插件清单 ----------
 # n=名称 i=图标 c=颜色类 d=描述 on=是否启用
 PLUGINS = [
     {"name": "天气助手", "icon": "weather", "color": "", "desc": "语音查询天气，出门前提醒你带伞。", "enabled": 1, "sort": 1},
@@ -136,7 +135,7 @@ PLUGINS = [
     {"name": "打卡日历", "icon": "clock", "color": "--mint", "desc": "记录陪伴的每一天，集齐专属纪念徽章。", "enabled": 0, "sort": 8},
 ]
 
-# ---------- 9. 全局界面/设备设置（对应 companion.js 的 voice/screen/music/connected） ----------
+# ---------- 9. 全局界面/设备设置 ----------
 # 以 key-value 形式存入 app_setting 表，结构化值用 JSON 序列化。
 # 说明：设置页与设备页里的开关、文案状态全部由这里驱动，前端不再写死任何演示值。
 SETTINGS = {
@@ -178,7 +177,7 @@ INTERACT_MESSAGES = {
     "music": "音乐已开始播放",
 }
 
-# ---------- 10. 成长时间线（对应 ViewMemory.vue 写死的 4 条） ----------
+# ---------- 10. 成长时间线 ----------
 # 标题/描述里带 {level} {growth} {name} {breed} 的占位，接口层按当前宠物替换
 TIMELINE = [
     {"event_date": "2026-11-19", "title": "升级 LV.{level} 🎉",
@@ -191,7 +190,7 @@ TIMELINE = [
      "description": "那一天，一只小小的{breed}走进了我们的生活。", "sort": 4},
 ]
 
-# ---------- 11. 里程碑统计（对应 ViewMemory.vue 右侧 4 项） ----------
+# ---------- 11. 里程碑统计 ----------
 MILESTONES = [
     {"label": "累计互动", "value": "328 次", "tail": "进行中", "sort": 1},
     {"label": "一起听过的歌", "value": "56 首", "tail": "进行中", "sort": 2},
@@ -199,7 +198,7 @@ MILESTONES = [
     {"label": "开心时刻", "value": "{days} 天", "tail": "达成", "sort": 4},
 ]
 
-# ---------- 12. 照片墙（对应 ViewMemory.vue 的 4 张） ----------
+# ---------- 12. 照片墙 ----------
 # image_key 对应前端本地图片资源（cat / kitten）；image_url 预留后端图片地址
 GALLERY = [
     {"image_key": "cat", "image_url": "", "caption": "午后的阳光", "sort": 1},
@@ -208,7 +207,7 @@ GALLERY = [
     {"image_key": "kitten", "image_url": "", "caption": "打个小盹", "sort": 4},
 ]
 
-# ---------- 13. 聊天兜底话术（对应 seed.js 的 CHAT_REPLIES，大模型未接入时使用） ----------
+# ---------- 13. 聊天兜底话术（大模型未接入时使用） ----------
 CHAT_REPLIES = [
     "好呀，我最喜欢陪着主人啦～ 😺",
     "嗯嗯，我记住啦！我们是最要好的朋友～",
@@ -217,8 +216,8 @@ CHAT_REPLIES = [
 ]
 
 # ============================================================================
-# 以下为遗留“硬件监控域”演示数据（迁移自旧 SpringBoot 的 data.sql），
-# 对应旧接口 /api/sensors、/api/alarms、/api/dashboard，供 ESP32/香橙派链路使用。
+# 以下为硬件监控域初始数据，对应 /api/sensors、/api/alarms、/api/dashboard，
+# 供 ESP32 / 香橙派链路联调使用。
 # ============================================================================
 
 MONITOR_DEVICES = [
@@ -244,18 +243,18 @@ MONITOR_SENSORS = [
 
 MONITOR_ALARMS = [
     ("esp32-s3-001", "orangepi-cam-001", "PERSON_DETECT", 0.93,
-     "./upload-images/sample_1.jpg", "/images/sample_1.jpg", False,
+     "", "", False,
      "检测到人体，已自动抓拍并联动声光报警", "2026-11-20 08:50:00"),
     ("esp32-s3-001", "orangepi-cam-001", "PERSON_DETECT", 0.85,
-     "./upload-images/sample_2.jpg", "/images/sample_2.jpg", True,
+     "", "", True,
      "检测到人体，夜视模式抓拍", "2026-11-20 10:20:00"),
     ("esp32-s3-001", "orangepi-cam-001", "PERSON_DETECT", 0.91,
-     "./upload-images/sample_3.jpg", "/images/sample_3.jpg", True,
+     "", "", True,
      "检测到人体，已自动抓拍并联动云台跟踪", "2026-11-20 13:15:00"),
     ("esp32-s3-001", "orangepi-cam-001", "PERSON_DETECT", 0.96,
-     "./upload-images/sample_1.jpg", "/images/sample_1.jpg", False,
+     "", "", False,
      "检测到人体，高置信度告警", "2026-11-20 16:40:00"),
     ("esp32-s3-001", "orangepi-cam-001", "PERSON_DETECT", 0.89,
-     "./upload-images/sample_2.jpg", "/images/sample_2.jpg", False,
+     "", "", False,
      "检测到人体，夜视模式抓拍", "2026-11-20 18:10:00"),
 ]

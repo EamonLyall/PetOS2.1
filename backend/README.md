@@ -6,7 +6,7 @@
 - 默认使用 Python 自带 **SQLite** 内嵌库，免安装数据库，首次启动自动建表并灌入演示数据；
 - **MQTT、大模型、摄像头**等外部对接项在配置中留空，后端自动进入演示兜底模式，不影响本地联调；接入真实服务时只需改 `.env`。
 
-> 旧版 SpringBoot（Java）源码保留在 `src/` 目录作为历史参考，默认不再启动；新后端入口为 `app/main.py`。
+> 后端入口为 `app/main.py`，运行依赖见 `requirements.txt`。
 
 ---
 
@@ -97,10 +97,6 @@ backend/
 │  └─ routers/
 │     ├─ companion.py            # 陪伴域：设备/宠物/聊天/互动/插件/记忆/设置/通知
 │     └─ monitor.py              # 监控域：传感器/告警/指令/大屏统计
-├─ sql/
-│  ├─ petos_companion_sqlite.sql # 当前 SQLite 数据快照（队友可直接导入）
-│  └─ petos_companion_mysql.sql  # MySQL 建库 + 建表 + 种子脚本（切 MySQL 时使用）
-├─ upload-images/                # 抓拍图片本地存储（含 3 张样图）
 ├─ scripts/
 │  ├─ verify_api.py              # 接口联调自检脚本
 │  └─ db_tool.py                 # 数据库导出 / 导入 / 重置 / 统计
@@ -108,7 +104,6 @@ backend/
 ├─ .env.example                  # 环境变量模板
 ├─ .env                          # 本地实际配置（外部服务留空，演示兜底）
 ├─ requirements.txt              # Python 依赖清单
-├─ src/                          # 【遗留】旧 SpringBoot 源码，仅作参考，默认不启动
 └─ README.md                     # 本文件
 ```
 
@@ -205,7 +200,7 @@ python scripts/db_tool.py reset --yes     # 重置为初始种子数据
 python scripts/db_tool.py stats           # 查看各表行数
 ```
 
-- 切换 MySQL：执行 `sql/petos_companion_mysql.sql`，再修改 `.env` 的 `DATABASE_URL`。
+- 切换 MySQL：按 `docs/DATABASE.md` 的表结构建库后，修改 `.env` 的 `DATABASE_URL`。
 
 ---
 
@@ -219,15 +214,7 @@ python scripts/db_tool.py stats           # 查看各表行数
 
 ---
 
-## 九、与旧 SpringBoot 后端的关系
-
-- 旧 Java 工程（`src/`、`pom.xml`、`application.yml`、`data.sql`）保留未删，供对照分层思路与 MQTT 历史实现；
-- 新后端用 FastAPI 重写了全部接口，并把原来分散在 H2/Java 实体里的监控域数据并入统一 SQLite 库；
-- 旧 Java 工程如需运行，在 `backend/` 目录手动执行 `mvn spring-boot:run`（需 JDK17），当前默认流程不再使用。
-
----
-
-## 十、常见问题
+## 九、常见问题
 
 | 现象 | 排查 |
 | --- | --- |

@@ -13,6 +13,10 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true, // 允许局域网内 ESP32 / 手机访问调试
+    // 占位图统一放在仓库根目录 shared/images，需要允许 Vite 读取上级目录
+    fs: {
+      allow: [fileURLToPath(new URL('..', import.meta.url))]
+    },
     proxy: {
       // 后端 REST 接口代理：开发环境把 /api 转发到后端服务，避免跨域
       '/api': {

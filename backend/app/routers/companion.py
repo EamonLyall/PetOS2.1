@@ -11,7 +11,7 @@ from fastapi import APIRouter, Body, Query
 
 from ..database import get_db, get_setting, set_setting
 from ..common.response import ok, BusinessError
-from ..services import llm
+from ..services import llm, emotion
 from ..services.mqtt import get_mqtt_service
 from .. import seed
 
@@ -22,7 +22,7 @@ router = APIRouter(prefix="/api", tags=["陪伴域"])
 # 行数据 -> 前端字典的转换工具
 # ------------------------------------------------------------
 def _device_dict(row) -> dict:
-    """设备行 -> 前端设备对象（字段与 seed.js 的 devices 一致）。"""
+    """设备行 -> 前端设备对象（petKey、signal、battery 等字段）。"""
     return {
         "id": row["id"],
         "name": row["name"],
@@ -38,7 +38,7 @@ def _device_dict(row) -> dict:
 
 
 def _nearby_dict(row) -> dict:
-    """附近设备行 -> 前端附近设备对象（字段与 seed.js 的 nearby 一致）。"""
+    """附近设备行 -> 前端附近设备对象（petKey、distance、online 等字段）。"""
     return {
         "id": row["id"],
         "name": row["name"],
@@ -138,8 +138,18 @@ def _list_notifications(conn) -> list[dict]:
     return [_notification_dict(r) for r in rows]
 
 
+def _list_alerts(conn) -> list[dict]:
+    """未处理预警优先，其余按最近生成排序。"""
+    rows = conn.execute(
+        """SELECT * FROM emotion_alert
+           ORDER BY CASE status WHEN 'pending' THEN 0 WHEN 'acknowledged' THEN 1 ELSE 2 END,
+                    id DESC"""
+    )
+    return [emotion.alert_dict(r) for r in rows]
+
+
 # ============================================================
-# 1. 全量快照（前端一次性拉齐所有演示数据，替代本地 seed.js）
+# 1. 全量快照（前端一次性拉齐设备、宠物、图表、设置等数据）
 # ============================================================
 @router.get("/state", summary="全量状态快照")
 def get_state():
@@ -220,6 +230,7 @@ def get_state():
             for r in conn.execute("SELECT * FROM gallery_item ORDER BY sort")
         ]
         notifications = _list_notifications(conn)
+        alerts = _list_alerts(conn)
 
     return ok({
         "devices": devices,
@@ -236,6 +247,8 @@ def get_state():
         "gallery": gallery,
         "notifications": notifications,
         "unreadCount": sum(1 for n in notifications if not n["read"]),
+        "alerts": alerts,
+        "openAlertCount": sum(1 for a in alerts if a["status"] != "resolved"),
     })
 
 
@@ -530,12 +543,14 @@ def chat(payload: dict = Body(...)):
     history = payload.get("messages") or []
 
     with get_db() as conn:
-        # 若前端未带历史，取库中记录作为上下文
+        previous_messages = [
+            {"who": r["who"], "text": r["text"]}
+            for r in conn.execute("SELECT who, text FROM chat_message ORDER BY sort, id")
+        ]
+        # 若前端未带历史，取库中记录作为模型上下文
         if not history:
-            history = [
-                {"who": r["who"], "text": r["text"]}
-                for r in conn.execute("SELECT who, text FROM chat_message ORDER BY sort, id")
-            ]
+            history = previous_messages
+        risk = emotion.assess_risk(previous_messages, text)
 
         # 落库主人消息
         max_sort = conn.execute("SELECT COALESCE(MAX(sort), 0) AS m FROM chat_message").fetchone()["m"]
@@ -544,16 +559,53 @@ def chat(payload: dict = Body(...)):
             ("me", text, device_id, datetime.now().isoformat(timespec="seconds"), max_sort + 1),
         )
 
-        # 调用大模型/兜底生成回复
-        reply = llm.chat(history, text, device_id)
+        # 风险表达使用确定的共情/紧急话术，避免通用兜底回复造成二次刺激
+        reply = risk["reply"] or llm.chat(history, text, device_id)
 
         # 落库小宠回复
         conn.execute(
             "INSERT INTO chat_message (who, text, device_id, created_at, sort) VALUES (?, ?, ?, ?, ?)",
             ("pet", reply, device_id, datetime.now().isoformat(timespec="seconds"), max_sort + 2),
         )
+        alert = emotion.save_alert(conn, device_id, risk)
+        notifications = _list_notifications(conn)
 
-    return ok({"reply": reply})
+    return ok({"reply": reply, "risk": risk, "alert": alert, "notifications": notifications})
+
+
+# ============================================================
+# 6.1 情绪守护预警（PC 与 H5 共用）
+# ============================================================
+@router.get("/alerts", summary="守护预警列表")
+def list_alerts():
+    with get_db() as conn:
+        alerts = _list_alerts(conn)
+    return ok({"alerts": alerts, "openCount": sum(1 for a in alerts if a["status"] != "resolved")})
+
+
+@router.put("/alerts/{alert_id}", summary="确认或处理守护预警")
+def update_alert(alert_id: int, payload: dict = Body(...)):
+    status = payload.get("status")
+    if status not in ("acknowledged", "resolved"):
+        raise BusinessError("status 仅支持 acknowledged / resolved")
+    with get_db() as conn:
+        row = conn.execute("SELECT * FROM emotion_alert WHERE id = ?", (alert_id,)).fetchone()
+        if row is None:
+            raise BusinessError("预警记录不存在")
+        if row["status"] == "resolved":
+            raise BusinessError("该预警已处理，无需重复操作")
+        now = datetime.now().isoformat(timespec="seconds")
+        note_value = payload.get("handleNote", row["handle_note"] or "")
+        if not isinstance(note_value, str):
+            raise BusinessError("handleNote 必须是字符串")
+        note = note_value.strip()[:500]
+        conn.execute(
+            """UPDATE emotion_alert SET status = ?, handle_note = ?, updated_at = ?,
+               handled_at = ? WHERE id = ?""",
+            (status, note, now, now if status == "resolved" else None, alert_id),
+        )
+        row = conn.execute("SELECT * FROM emotion_alert WHERE id = ?", (alert_id,)).fetchone()
+    return ok({"alert": emotion.alert_dict(row)})
 
 
 # ============================================================
@@ -655,6 +707,7 @@ def list_nav():
         {"key": "home", "name": "总览首页", "icon": "home"},
         {"key": "pet", "name": "我的宠物", "icon": "pet"},
         {"key": "chat", "name": "互动陪伴", "icon": "chat"},
+        {"key": "alerts", "name": "守护预警", "icon": "health"},
         {"key": "device", "name": "设备控制", "icon": "device"},
         {"key": "memory", "name": "成长记忆", "icon": "memory"},
         {"key": "plugin", "name": "插件中心", "icon": "plugin"},

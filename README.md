@@ -23,7 +23,7 @@
 | 通信预留 | MQTT（EMQX）、大模型（OpenAI 兼容协议） |
 | 文档 | Swagger UI 自动生成接口文档 |
 
-> `backend/src/` 为旧版 SpringBoot 参考源码，仅作对照，**不参与当前运行**；当前后端由 FastAPI 提供全部接口。
+> 当前后端由 FastAPI 提供全部接口，前端通过 REST 访问。
 
 ## 🚀 快速开始
 
@@ -46,7 +46,7 @@ python -m uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
 
 首次启动会自动创建 `petos.db` 并灌入种子数据（数据库文件不入库，见下文）。
 
-### 2. 启动前端
+### 2. 启动 PC 端
 
 新开一个终端：
 
@@ -58,6 +58,18 @@ npm run dev
 
 浏览器打开终端打印的 `Local:` 地址（默认 `http://localhost:5173`，若端口被占用 Vite 会自动顺延到 5174/5175…）。前端已把 `/api`、`/images` 代理到 `127.0.0.1:8080`。
 
+### 3. 启动移动端 H5（可选）
+
+移动端是独立工程 `mobile/`，与 PC 端互不影响，但共用同一个后端和数据库：
+
+```powershell
+cd mobile
+npm install                               # 首次
+npm run dev
+```
+
+默认地址 `http://localhost:5174`。手机与电脑处于同一局域网时，用电脑局域网 IP 访问 `http://<电脑IP>:5174` 即可；移动端同样把 `/api` 代理到后端 8080。
+
 ## 📁 项目结构
 
 ```
@@ -65,13 +77,12 @@ PetOS2.1/
 ├─ backend/                FastAPI 后端
 │  ├─ app/                 应用源码（routers / services / common / seed / database）
 │  ├─ scripts/             db_tool.py（数据库导出/导入/重置）、verify_api.py（接口自检）
-│  ├─ sql/                 SQLite / MySQL 数据快照与建库脚本
 │  ├─ docs/                API.md / DATABASE.md / INTEGRATION.md
-│  ├─ upload-images/       抓拍样图（sample_*.jpg 入库，运行时上传不入库）
-│  ├─ src/  pom.xml        （legacy）旧 SpringBoot 参考源码
 │  └─ README.md
-├─ frontend/               Vue 3 前端
+├─ frontend/               Vue 3 PC 端（端口 5173）
 │  └─ src/ views/ components/ stores/ config/ router/
+├─ mobile/                 Vue 3 移动端 H5（端口 5174，独立工程，共用后端）
+├─ shared/images/          PC 与移动端共用的占位图片
 ├─ 系统整合与答辩说明.md
 ├─ 算法与技术栈说明.md
 └─ README.md               （本文件）
@@ -92,10 +103,10 @@ PetOS2.1/
 - `backend/.env` 为本地实际配置（已被 `.gitignore` 排除），复制 `.env.example` 填写即可。
 - MQTT / 大模型地址留空时，后端自动进入**演示兜底模式**：聊天走内置话术、硬件指令仅打印日志，不影响本地联调与答辩。
 
-## 📦 演示数据
+## 📦 初始数据
 
-- `petos.db`（本地 SQLite）不入库，首次运行自动建表 + 灌入种子数据。
-- `backend/sql/petos_companion_sqlite.sql` 是可提交的数据快照，答辩前用它让所有队友拿到**完全一致**的状态：
+- `petos.db`（本地 SQLite）不入库，首次运行自动建表并写入初始种子数据。
+- 如需把当前数据同步给队友，可临时导出 SQL 快照（导出文件不随仓库提交）：
 
   ```powershell
   # 导出方（backend 目录）

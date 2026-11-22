@@ -87,6 +87,16 @@ export function sendChatMessage(payload) {
   return http.post('/chat', payload)
 }
 
+// ---------- 情绪守护预警 ----------
+
+export function fetchAlerts() {
+  return http.get('/alerts')
+}
+
+export function updateAlert(alertId, payload) {
+  return http.put(`/alerts/${alertId}`, payload)
+}
+
 // ---------- 插件 ----------
 
 // 插件清单

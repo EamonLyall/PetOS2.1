@@ -18,6 +18,7 @@ export const NAV_ITEMS = [
   { key: 'home', name: '总览首页', icon: 'home' },
   { key: 'pet', name: '我的宠物', icon: 'pet' },
   { key: 'chat', name: '互动陪伴', icon: 'chat' },
+  { key: 'alerts', name: '守护预警', icon: 'health' },
   { key: 'device', name: '设备控制', icon: 'device' },
   { key: 'memory', name: '成长记忆', icon: 'memory' },
   { key: 'plugin', name: '插件中心', icon: 'plugin' },

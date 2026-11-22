@@ -3,8 +3,7 @@
 #
 # 设计说明：
 #   - 默认使用 Python 自带 sqlite3，免安装数据库，路演换电脑直接跑；
-#   - 表结构与 sql/petos_companion_mysql.sql 中的 MySQL 版本保持一致，
-#     将来切换 MySQL 时表名/字段名无需改动；
+#   - 表结构同时按 MySQL 语法习惯设计（表名/字段名无需改动即可迁移）；
 #   - 种子数据只在“对应表为空”时写入，重复启动不会重复插入；
 #   - 结构化设置（voice/screen/music）以 JSON 字符串存在 app_setting 表。
 # ============================================================
@@ -171,6 +170,23 @@ DDL_STATEMENTS = [
         image_url  TEXT,                       -- 后端图片地址（预留）
         caption    TEXT,                       -- 图片说明
         sort       INTEGER DEFAULT 0
+    )
+    """,
+    # 陪伴域：情绪守护预警（风险提示，不作医学诊断）
+    """
+    CREATE TABLE IF NOT EXISTS emotion_alert (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        device_id   TEXT,                       -- 来源设备
+        level       TEXT NOT NULL,              -- warning=持续关注 critical=紧急
+        category    TEXT NOT NULL,              -- low_mood/self_harm/harm_others
+        status      TEXT DEFAULT 'pending',      -- pending/acknowledged/resolved
+        summary     TEXT NOT NULL,              -- 触发原因摘要
+        evidence    TEXT,                       -- 相关消息摘录 JSON（最多两条）
+        guidance    TEXT,                       -- 家长处理建议
+        created_at  TEXT,
+        updated_at  TEXT,
+        handled_at  TEXT,
+        handle_note TEXT
     )
     """,
     # 陪伴域：通知中心（顶栏通知气泡，状态落库）

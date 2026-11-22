@@ -48,7 +48,8 @@ check("health 数据库可用", h["data"].get("database") == "ok", str(h["data"]
 
 # 1.1 导航配置
 nav = get("/api/nav")["data"]
-check("导航项=7", len(nav) == 7, str(len(nav)))
+check("导航项=8", len(nav) == 8, str(len(nav)))
+check("导航含守护预警页", any(x["key"] == "alerts" for x in nav))
 check("导航含设置页", any(x["key"] == "settings" for x in nav))
 
 # 2. 全量快照
@@ -64,6 +65,7 @@ check("state 插件=8", len(s["plugins"]) == 8)
 check("state 时间线=4", len(s["timeline"]) == 4)
 check("state 照片墙=4", len(s["gallery"]) == 4)
 check("state 含通知", len(s["notifications"]) >= 1 and "unreadCount" in s)
+check("state 含守护预警", isinstance(s.get("alerts"), list) and "openAlertCount" in s)
 # 设置分组完整性：设置页与设备页的所有开关都由这些分组驱动
 for group in ("voice", "screen", "music", "network", "device", "notify", "profile", "camera"):
     check(f"state 设置分组 {group}", isinstance(s["settings"].get(group), dict))
@@ -122,9 +124,13 @@ check("配对后附近剩1台", len(near) == 1, str(len(near)))
 disc = post("/api/devices/d-xiaobai/disconnect", {})["data"]
 check("断开连接", disc["connected"] is False)
 # 还原：把小白移回附近
+import os
 import sqlite3
 from pathlib import Path
-db = Path(__file__).resolve().parent.parent / "petos.db"
+db_url = os.environ.get("DATABASE_URL", "sqlite:///./petos.db")
+db = Path(db_url.replace("sqlite:///", "", 1)) if db_url.startswith("sqlite:///") else Path("petos.db")
+if not db.is_absolute():
+    db = Path(__file__).resolve().parent.parent / db
 con = sqlite3.connect(db)
 con.execute("UPDATE companion_device SET is_nearby = 1 WHERE id = 'd-xiaobai'")
 con.execute("UPDATE app_setting SET value = 'true' WHERE key = 'connected'")

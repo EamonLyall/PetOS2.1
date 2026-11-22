@@ -135,6 +135,21 @@
           </div>
         </div>
 
+        <div
+          v-if="store.latestRisk.level === 'warning' || store.latestRisk.level === 'critical'"
+          class="chat-risk"
+          :class="'chat-risk--' + store.latestRisk.level"
+          role="status"
+          aria-live="polite"
+        >
+          <AppIcon name="health" />
+          <div>
+            <b>{{ store.latestRisk.summary }}</b>
+            <p>{{ store.latestRisk.guidance }}</p>
+            <router-link :to="{ name: 'alerts' }">查看守护预警</router-link>
+          </div>
+        </div>
+
         <div class="chat">
           <div ref="chatBody" class="chat__body">
             <div

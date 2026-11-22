@@ -11,8 +11,8 @@
 
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import catBanner from '@/assets/cat-banner.jpg'
-import kittenSquare from '@/assets/kitten-square.jpg'
+import catBanner from '../../../shared/images/cat-banner.jpg'
+import kittenSquare from '../../../shared/images/kitten-square.jpg'
 import { NAV_ITEMS, FALLBACK_DEVICE } from '@/config/nav'
 import * as api from '@/api'
 
@@ -70,6 +70,12 @@ export const useCompanionStore = defineStore('companion', () => {
   // —— 通知中心（数据库 notification 表）——
   const notifications = ref([])
   const unreadCount = computed(() => notifications.value.filter(n => !n.read).length)
+
+  // 情绪守护预警与最近一次聊天风险评估（均来自后端）
+  const alerts = ref([])
+  const latestRisk = ref({ level: 'none', category: 'none', summary: '', guidance: '' })
+  const openAlertCount = computed(() => alerts.value.filter(a => a.status !== 'resolved').length)
+  const pendingAlertCount = computed(() => alerts.value.filter(a => a.status === 'pending').length)
 
   // —— 浮层 / 界面状态（纯前端交互态，不走后端）——
   const ui = ref({
@@ -158,6 +164,7 @@ export const useCompanionStore = defineStore('companion', () => {
         chatMessages.value = state.chatMessages || []
         blessList.value = state.blessList || []
         notifications.value = state.notifications || []
+        alerts.value = state.alerts || []
         applySettings(state.settings)
         loaded.value = true
       } else {
@@ -345,6 +352,12 @@ export const useCompanionStore = defineStore('companion', () => {
         messages: chatMessages.value.map(({ who, text: t }) => ({ who, text: t }))
       })
       chatMessages.value.push({ who: 'pet', text: data.reply })
+      latestRisk.value = data.risk || latestRisk.value
+      if (data.alert) upsertAlert(data.alert)
+      if (data.notifications) notifications.value = data.notifications
+      if (data.alert) {
+        pushToast(data.alert.level === 'critical' ? '已生成紧急守护预警，请家长立即查看' : '已通知家长端持续关注情绪状态')
+      }
     } catch (err) {
       pushToast('发送失败：' + err.message)
     }
@@ -407,6 +420,33 @@ export const useCompanionStore = defineStore('companion', () => {
   }
 
   // ============================================================
+  // 情绪守护预警：PC / H5 共用后端记录
+  // ============================================================
+  function upsertAlert(alert) {
+    const statusOrder = { pending: 0, acknowledged: 1, resolved: 2 }
+    alerts.value = [alert, ...alerts.value.filter(a => a.id !== alert.id)]
+      .sort((a, b) => statusOrder[a.status] - statusOrder[b.status] || b.id - a.id)
+  }
+
+  async function refreshAlerts() {
+    const [alertData, notificationData] = await Promise.all([api.fetchAlerts(), api.fetchNotifications()])
+    alerts.value = alertData.alerts || []
+    notifications.value = notificationData.notifications || []
+  }
+
+  async function updateAlertStatus(id, status, handleNote = '') {
+    try {
+      const data = await api.updateAlert(id, { status, handleNote })
+      upsertAlert(data.alert)
+      pushToast(status === 'resolved' ? '预警已标记为处理完成' : '已确认知晓，记得继续跟进')
+      return true
+    } catch (err) {
+      pushToast('预警更新失败：' + err.message)
+      return false
+    }
+  }
+
+  // ============================================================
   // 插件开关
   // ============================================================
   async function togglePlugin(p) {
@@ -424,11 +464,12 @@ export const useCompanionStore = defineStore('companion', () => {
     IMG, devices, nearby, pets, weather, charts, plugins, timeline, milestones,
     gallery, nav, connected, activeDeviceId, voice, screen, music, ui,
     network, deviceOpts, notify, profile, camera, notifications, unreadCount,
+    alerts, latestRisk, openAlertCount, pendingAlertCount,
     loaded, loading, toasts, chatMessages, blessList,
     activeDevice, activePet,
     bootstrap, pushToast, connectDevice, disconnect, rescan,
     toggleWake, toggleMusic, toggleTts, toggleScreen,
     setVolume, commitVolume, sendChat, toggleBless, togglePlugin, persistSettings,
-    toggleOption, interact, markAllRead
+    toggleOption, interact, markAllRead, refreshAlerts, updateAlertStatus
   }
 })
